@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      .container {
+        width: 50%;
+      }
+      .wrapper {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div>
+        <label for="massa" id="massaLabel">0</label>
+        <input type="range" id="massa" value="0" min="0" max="1000" step="10" />
+        <label for="massa">Massa (g)</label>
+      </div>
+      <div>
+        <label for="veerconstante" id="veerconstanteLabel">0</label>
+        <input
+          type="range"
+          id="veerconstante"
+          value="0"
+          min="0"
+          max="10000"
+          step="10"
+        />
+        <label for="veerconstante">Veerconstante (N/m)</label>
+      </div>
+      <div>
+        <label for="uittrekking" id="uittrekkingLabel">0</label>
+        <input
+          type="range"
+          id="uittrekking"
+          value="0"
+          min="0"
+          max="2"
+          step="0.1"
+        />
+        <label for="uittrekking">Uittrekking (cm)</label>
+      </div>
+      <div class="container">
+        <canvas id="chart" class="chart" width="1" height="1"></canvas>
+      </div>
+    </div>
+    <script>
+      const ctx = document.getElementById("chart");
+      let chart = new Chart(ctx, {});
+
+      const veerconstanteInput = document.getElementById("veerconstante");
+      const veerconstanteLabel = document.getElementById("veerconstanteLabel");
+      veerconstanteInput.oninput = (e) => {
+        veerconstanteLabel.innerText = e.currentTarget.value;
+        compute(massaLabel.innerText, veerconstanteLabel.innerText, uittrekkingLabel.innerText);
+      };
+      const massaInput = document.getElementById("massa");
+      const massaLabel = document.getElementById("massaLabel");
+      massaInput.oninput = (e) => {
+        massaLabel.innerText = e.currentTarget.value;
+        compute(massaLabel.innerText, veerconstanteLabel.innerText, uittrekkingLabel.innerText);
+      };
+      const uittrekkingInput = document.getElementById("uittrekking");
+      const uittrekkingLabel = document.getElementById("uittrekkingLabel");
+      uittrekkingInput.oninput = (e) => {
+        uittrekkingLabel.innerText = e.currentTarget.value;
+        compute(massaLabel.innerText, veerconstanteLabel.innerText, uittrekkingLabel.innerText);
+      };
+
+      
+      const compute = (m, C, u) => {
+        let v = 0;
+        const arr = [];
+
+
+        const computeFwl = () => {
+          return 1/2 * 1.293 * (0.64/100)*
+        }
+
+        for (let t = 0; t < 10; t += 1) {
+          console.log(t)
+          let Fres = 0;
+          if (t === 0) {
+            Fres =
+              C * u -
+              (1 / 2) *
+                1.293 *
+                (0.64 / 100) *
+                (4.8 / 100) *
+                0.82 *
+                v*v
+          } else {
+            Fres =
+              (-1 / 2) *
+              1.293 *
+              (0.64 / 100) *
+              (4.8 / 100) *
+              0.82 *
+              v*v
+          }
+          console.log(Fres)
+          a = Fres / m;
+          dv = a * 0.1;
+          v = v + dv;
+          arr.push({t, v});
+        }
+        console.log(arr);
+        chart.destroy();
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: arr.map(comp => comp.t),
+            datasets: [{
+              label: '-',
+              data: arr.map(comp => comp.v),
+              
+            }]
+          }
+        })
+      };
+
+      compute(massaLabel.innerText, veerconstanteLabel.innerText, uittrekkingLabel.innerText);
+    </script>
+  </body>
+</html>
