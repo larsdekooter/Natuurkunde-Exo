@@ -7,10 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       .container {
-        width: 80%;
+        width: 60rem;
       }
       .wrapper {
-        width: 40%;
+        width: 30rem;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -19,13 +19,13 @@
       body {
         display: flex;
         align-items: center;
-        flex-direction: column;
+        flex-direction: row-reverse;
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: bold;
+        justify-content: space-between;
       }
       input[type="number"] {
-        width: 9vw;
-      }
-      label {
-        margin-left: auto;
+        width: 5rem;
       }
       .inputrow {
         width: 100%;
@@ -33,11 +33,14 @@
         justify-content: space-between;
       }
       .inputrow div {
-        width: 140px;
+        width: 10rem;
       }
     </style>
   </head>
   <body>
+    <div class="container">
+      <canvas id="chart" class="chart" width="1" height="1"></canvas>
+    </div>
     <div class="wrapper">
       <div class="inputrow">
         <input
@@ -45,7 +48,7 @@
           id="massaLabel"
           value="10"
           min="10"
-          max="1000"
+          max="200"
           step="10"
         />
         <input
@@ -53,7 +56,7 @@
           id="massa"
           value="0"
           min="10"
-          max="1000"
+          max="200"
           step="10"
         />
         <div>Massa (g)</div>
@@ -97,9 +100,7 @@
         <div>Uittrekking (cm)</div>
       </div>
     </div>
-    <div class="container">
-      <canvas id="chart" class="chart" width="1" height="1"></canvas>
-    </div>
+    
     <script>
       function useState(initialValue) {
         let state = initialValue;
@@ -121,12 +122,14 @@
 
         const subscribe = (listener) => {
           listeners.add(listener);
-          return () => listeners.delete(listener);
+          return () => {
+            listeners.delete(listener); // Unsubscribe function
+          };
         };
 
         return [getState, setState, subscribe];
       }
-      const [state, setState, onStateChange] = useState({
+      const [getState, setState, onStateChange] = useState({
         massa: 10,
         veerconstante: 0,
         uittrekking: 0,
@@ -143,6 +146,8 @@
           state.veerconstante = value;
           return state;
         });
+        state = getState();
+        compute(state.massa, state.veerconstante, state.uittrekking);
       });
       veerconstanteLabel.addEventListener("input", function (e) {
         const value = this.value;
@@ -151,6 +156,8 @@
           state.veerconstante = value;
           return state;
         });
+        state = getState();
+        compute(state.massa, state.veerconstante, state.uittrekking);
       });
 
       const massaInput = document.getElementById("massa");
@@ -162,6 +169,8 @@
           state.massa = value;
           return state;
         });
+        state = getState();
+        compute(state.massa, state.veerconstante, state.uittrekking);
       });
       massaLabel.addEventListener("input", function (e) {
         const value = this.value;
@@ -170,6 +179,8 @@
           state.massa = value;
           return state;
         });
+        state = getState();
+        compute(state.massa, state.veerconstante, state.uittrekking);
       });
 
       const uittrekkingInput = document.getElementById("uittrekking");
@@ -181,6 +192,8 @@
           state.uittrekking = value;
           return state;
         });
+        state = getState();
+        compute(state.massa, state.veerconstante, state.uittrekking);
       });
       uittrekkingLabel.addEventListener("input", function (e) {
         const value = this.value;
@@ -189,35 +202,42 @@
           state.uittrekking = value;
           return state;
         });
+        state = getState();
+        compute(state.massa, state.veerconstante, state.uittrekking);
       });
 
-      onStateChange((newState) => {
-        console.log(newState);
-        compute(newState.massa, newState.veerconstante, newState.uittrekking);
-      });
 
       const compute = (m, C, u) => {
         let v = 0;
         let x = 0;
+        let t = 0;
         const arr = [];
+        const wc = 0.15;
+        const Fwr = (m/1000) * 9.81 * wc;
 
         const computeFwl = () =>
           (1 / 2) * 1.293 * (0.64 / 100) * (4.8 / 100) * 0.82 * v * v;
 
-        for (let t = 0; t < 10; t += 0.1) {
+        while (v >= 0 && t < 1000) {
           let Fres = 0;
           if (t === 0) {
-            Fres = C * (u / 100) - computeFwl();
+            Fres = C * (u / 100) - computeFwl() - Fwr;
           } else {
-            Fres = -computeFwl();
+            Fres = -computeFwl() - Fwr;
           }
-          a = Fres / m;
-          dv = a * 0.1;
+          const a = Fres / (m/1000);
+          const dv = a * 0.1;
           v = v + dv;
-          dx = v * 0.1;
+          const dx = v * 0.1;
           x = x + dx;
-          arr.push({ t: Math.round(t * 10) / 10, x });
+          console.log({t,x,v, Fres, Fwl: -computeFwl(), Fwr})
+          arr.push({ t: Math.round(t * 10) / 10, x,v });
+          t += 0.1
         }
+
+        // for (let t = 0; t < 10; t += 0.1) {
+          
+        // }
         chart.destroy();
         chart = new Chart(ctx, {
           type: "line",
@@ -225,10 +245,15 @@
             labels: arr.map((comp) => comp.t),
             datasets: [
               {
-                label: "-",
-                data: arr.map((comp) => comp.x),
+                label: "Snelheid (m/s)",
+                data: arr.map((comp) => comp.v),
                 pointRadius: 0,
               },
+              {
+                label: "Afstand (m)",
+                data: arr.map(comp => comp.x),
+                pointRadius: 0
+              }
             ],
           },
         });
