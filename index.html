@@ -51,14 +51,7 @@
           max="200"
           step="10"
         />
-        <input
-          type="range"
-          id="massa"
-          value="0"
-          min="10"
-          max="200"
-          step="10"
-        />
+        <input type="range" id="massa" value="0" min="10" max="200" step="10" />
         <div>Massa (g)</div>
       </div>
       <div class="inputrow">
@@ -75,7 +68,7 @@
           id="veerconstante"
           value="0"
           min="0"
-          max="10000"
+          max="1500"
           step="10"
         />
         <div>Veerconstante (N/m)</div>
@@ -99,8 +92,12 @@
         />
         <div>Uittrekking (cm)</div>
       </div>
+      <div style="font-weight: normal; font-style: italic">
+        Disclaimer: interne weerstand (in de wielen) en weerstand van het
+        schuiven van de wielen langs de rails worden niet meegerekend
+      </div>
     </div>
-    
+
     <script>
       function useState(initialValue) {
         let state = initialValue;
@@ -135,7 +132,31 @@
         uittrekking: 0,
       });
       const ctx = document.getElementById("chart");
-      let chart = new Chart(ctx, {});
+      const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          datasets: [
+            {
+              label: "Snelheid (m/s)",
+              data: [],
+              pointRadius: 0,
+            },
+            {
+              label: "Afstand (m)",
+              data: [],
+              pointRadius: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              min: 0,
+            },
+          },
+        },
+      });
 
       const veerconstanteInput = document.getElementById("veerconstante");
       const veerconstanteLabel = document.getElementById("veerconstanteLabel");
@@ -206,57 +227,46 @@
         compute(state.massa, state.veerconstante, state.uittrekking);
       });
 
-
       const compute = (m, C, u) => {
+        // Initialise values
         let v = 0;
         let x = 0;
         let t = 0;
-        const arr = [];
-        const wc = 0.15;
-        const Fwr = (m/1000) * 9.81 * wc;
+        const arr = [{ t: 0, x: 0, v: 0 }];
+        // Calculate rolling resistance
+        const wc = 0.25;
+        const Fwr = (m / 1000) * 9.81 * wc;
 
+        // Function to calculate air resistance
         const computeFwl = () =>
           (1 / 2) * 1.293 * (0.64 / 100) * (4.8 / 100) * 0.82 * v * v;
 
         while (v >= 0 && t < 1000) {
+          // Calculate Fres, based on if it is getting sent by the spring or not
           let Fres = 0;
           if (t === 0) {
             Fres = C * (u / 100) - computeFwl() - Fwr;
           } else {
             Fres = -computeFwl() - Fwr;
           }
-          const a = Fres / (m/1000);
+
+          // Calculate distance and speed using Fres
+          const a = Fres / (m / 1000);
           const dv = a * 0.1;
           v = v + dv;
           const dx = v * 0.1;
           x = x + dx;
-          console.log({t,x,v, Fres, Fwl: -computeFwl(), Fwr})
-          arr.push({ t: Math.round(t * 10) / 10, x,v });
-          t += 0.1
+          t += 0.1;
+          console.log({ t, x, v, Fres, Fwl: -computeFwl(), Fwr });
+          arr.push({ t: Math.round((t - 0.1) * 10) / 10, x, v });
         }
 
-        // for (let t = 0; t < 10; t += 0.1) {
-          
-        // }
-        chart.destroy();
-        chart = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: arr.map((comp) => comp.t),
-            datasets: [
-              {
-                label: "Snelheid (m/s)",
-                data: arr.map((comp) => comp.v),
-                pointRadius: 0,
-              },
-              {
-                label: "Afstand (m)",
-                data: arr.map(comp => comp.x),
-                pointRadius: 0
-              }
-            ],
-          },
-        });
+        // Update the chart using the new values
+        chart.data.labels = arr.map((comp) => comp.t);
+        chart.data.datasets[0].data = arr.map((comp) => comp.v);
+        chart.data.datasets[1].data = arr.map((comp) => comp.x);
+
+        chart.update();
       };
 
       compute(
