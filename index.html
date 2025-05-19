@@ -93,13 +93,13 @@
         <div>Uittrekking (cm)</div>
       </div>
       <div class="inputrow">
-        <input type="number" id="Fsn" value="0" min="0" max="20" step="1" />
-        <input type="range" id="Fsr" value="0" min="0" max="20" step="1" />
+        <input type="number" id="Fsn" value="0" min="0" max="20" step="0.1" />
+        <input type="range" id="Fsr" value="0" min="0" max="20" step="0.1" />
         <div>Fw,schuif (N)</div>
       </div>
       <div class="inputrow">
-        <input type="number" id="Fin" value="0" min="0" max="20" step="1" />
-        <input type="range" id="Fir" value="0" min="0" max="20" step="1" />
+        <input type="number" id="Fin" value="0" min="0" max="20" step="0.1" />
+        <input type="range" id="Fir" value="0" min="0" max="20" step="0.1" />
         <div>Fw,intern (N)</div>
       </div>
     </div>
@@ -162,6 +162,12 @@
             y: {
               min: 0,
             },
+            x: {
+              title: {
+                text: "t (s)",
+                display: true
+              }
+            }
           },
         },
       });
@@ -357,7 +363,7 @@
           if (t === 0) {
             Fres = C * (u / 100) - computeFwl() - Fwr - Fi - Fs;
           } else {
-            Fres = -computeFwl() - Fwr;
+            Fres = -computeFwl() - Fwr - Fi - Fs;
           }
 
           // Calculate distance and speed using Fres
@@ -367,10 +373,11 @@
           const dx = v * 0.1;
           x = x + dx;
           t += 0.1;
-          console.log({ t, x, v, Fres, Fwl: -computeFwl(), Fwr });
+          // console.log({ t, x, v, Fres, Fwl: -computeFwl(), Fwr });
           arr.push({ t: Math.round((t - 0.1) * 10) / 10, x, v });
         }
 
+        arr.splice(-1, 1);
         // Update the chart using the new values
         chart.data.labels = arr.map((comp) => comp.t);
         chart.data.datasets[0].data = arr.map((comp) => comp.v);
