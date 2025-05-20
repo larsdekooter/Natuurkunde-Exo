@@ -165,9 +165,9 @@
             x: {
               title: {
                 text: "t (s)",
-                display: true
-              }
-            }
+                display: true,
+              },
+            },
           },
         },
       });
@@ -360,7 +360,7 @@
         while (v >= 0 && t < 1000) {
           // Calculate Fres, based on if it is getting sent by the spring or not
           let Fres = 0;
-          if (t === 0) {
+          if (t === 0.1) {
             Fres = C * (u / 100) - computeFwl() - Fwr - Fi - Fs;
           } else {
             Fres = -computeFwl() - Fwr - Fi - Fs;
@@ -373,10 +373,9 @@
           const dx = v * 0.1;
           x = x + dx;
           t += 0.1;
-          // console.log({ t, x, v, Fres, Fwl: -computeFwl(), Fwr });
           arr.push({ t: Math.round((t - 0.1) * 10) / 10, x, v });
         }
-
+        // Remove last value, since speed is negative here and the travelled distance would decline
         arr.splice(-1, 1);
         // Update the chart using the new values
         chart.data.labels = arr.map((comp) => comp.t);
